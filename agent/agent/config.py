@@ -50,5 +50,5 @@ class AgentConfig:
             api_key=api_key,
             agent_id=_resolve_agent_id(),
             hostname=os.getenv("AGENT_HOSTNAME", socket.gethostname()),
-            interval=float(os.getenv("INTERVAL", "10")),
+            interval=float(os.getenv("INTERVAL", "2")),
         )

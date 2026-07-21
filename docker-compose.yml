@@ -53,7 +53,7 @@ services:
     environment:
       SERVER_URL: ws://server:8000
       API_KEY: ${API_KEY:-changeme-dev-key}
-      INTERVAL: "10"
+      INTERVAL: "2"
       HOST_PROC: /host/proc
       AGENT_HOSTNAME: ${HOSTNAME:-docker-host}
     volumes:
