@@ -1,6 +1,6 @@
 import { ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons';
-import { Column, Line } from '@ant-design/plots';
-import { PageContainer, ProCard, StatisticCard } from '@ant-design/pro-components';
+import { Line } from '@ant-design/plots';
+import { PageContainer, StatisticCard } from '@ant-design/pro-components';
 import {
   Badge,
   Card,
@@ -182,16 +182,6 @@ const Machines: React.FC = () => {
     [agents],
   );
 
-  const overviewData = useMemo(
-    () =>
-      agentList.flatMap((a) => [
-        { host: a.hostname, type: 'CPU', value: Number(a.cpu_percent.toFixed(1)) },
-        { host: a.hostname, type: '内存', value: Number(a.mem_percent.toFixed(1)) },
-        { host: a.hostname, type: '磁盘', value: Number(a.disk_percent.toFixed(1)) },
-      ]),
-    [agentList],
-  );
-
   const openDetail = async (agent: AgentOut) => {
     setSelected(agent);
     setHistoryLoading(true);
@@ -204,6 +194,10 @@ const Machines: React.FC = () => {
   };
 
   const isPercent = metricField === 'cpu' || metricField === 'mem' || metricField === 'disk';
+
+  // 统一坐标轴与 tooltip 的数值单位
+  const valueFmt = (v: number) =>
+    isPercent ? `${v}%` : metricField === 'net' ? fmtRate(v) : `${v}`;
 
   // net 为双序列(上行/下行)；其余为单序列
   const historyData = useMemo(() => {
@@ -250,43 +244,38 @@ const Machines: React.FC = () => {
         ],
       }}
     >
-      <StatisticCard.Group direction="row" style={{ marginBottom: 16 }}>
-        <StatisticCard statistic={{ title: '机器总数', value: summary.total }} />
-        <StatisticCard.Divider />
+      <div
+        style={{
+          display: 'flex',
+          gap: 16,
+          flexWrap: 'wrap',
+          marginBottom: 16,
+        }}
+      >
         <StatisticCard
+          bordered
+          style={{ flex: '1 1 150px' }}
+          statistic={{ title: '机器总数', value: summary.total }}
+        />
+        <StatisticCard
+          bordered
+          style={{ flex: '1 1 150px' }}
           statistic={{ title: '在线', value: summary.online, valueStyle: { color: '#52c41a' } }}
         />
         <StatisticCard
+          bordered
+          style={{ flex: '1 1 150px' }}
           statistic={{
             title: '离线',
             value: summary.offline,
             valueStyle: { color: summary.offline ? '#ff4d4f' : undefined },
           }}
         />
-        <StatisticCard.Divider />
-        <StatisticCard statistic={{ title: '平均 CPU', value: summary.avg_cpu, suffix: '%' }} />
-        <StatisticCard statistic={{ title: '平均内存', value: summary.avg_mem, suffix: '%' }} />
-      </StatisticCard.Group>
+      </div>
 
-      <ProCard title="各机器资源使用率总览" style={{ marginBottom: 16 }} bordered>
-        {agentList.length === 0 ? (
-          <Empty description="暂无机器上报，请启动客户端(agent)后稍候" />
-        ) : (
-          <Column
-            data={overviewData}
-            xField="host"
-            yField="value"
-            colorField="type"
-            group
-            height={300}
-            axis={{ y: { labelFormatter: (v: number) => `${v}%` } }}
-            scale={{ y: { domainMax: 100 } }}
-            legend={{ color: { position: 'top' } }}
-          />
-        )}
-      </ProCard>
-
-      {agentList.length === 0 ? null : (
+      {agentList.length === 0 ? (
+        <Empty description="暂无机器上报，请启动客户端(agent)后稍候" style={{ padding: '60px 0' }} />
+      ) : (
         <Row gutter={[16, 16]}>
           {agentList.map((a) => (
             <Col key={a.agent_id} xs={24} sm={12} md={8} xl={6}>
@@ -305,15 +294,40 @@ const Machines: React.FC = () => {
       >
         {selected && (
           <>
-            <StatisticCard.Group direction="row" style={{ marginBottom: 16 }} wrap>
-              <StatisticCard statistic={{ title: 'CPU', value: selected.cpu_percent, suffix: '%' }} />
-              <StatisticCard statistic={{ title: '内存', value: selected.mem_percent, suffix: '%' }} />
-              <StatisticCard statistic={{ title: '磁盘', value: selected.disk_percent, suffix: '%' }} />
-              <StatisticCard statistic={{ title: '进程数', value: selected.process_count }} />
+            <div
+              style={{
+                display: 'flex',
+                gap: 12,
+                flexWrap: 'wrap',
+                marginBottom: 16,
+              }}
+            >
               <StatisticCard
+                bordered
+                style={{ flex: '1 1 120px' }}
+                statistic={{ title: 'CPU', value: selected.cpu_percent, suffix: '%' }}
+              />
+              <StatisticCard
+                bordered
+                style={{ flex: '1 1 120px' }}
+                statistic={{ title: '内存', value: selected.mem_percent, suffix: '%' }}
+              />
+              <StatisticCard
+                bordered
+                style={{ flex: '1 1 120px' }}
+                statistic={{ title: '磁盘', value: selected.disk_percent, suffix: '%' }}
+              />
+              <StatisticCard
+                bordered
+                style={{ flex: '1 1 120px' }}
+                statistic={{ title: '进程数', value: selected.process_count }}
+              />
+              <StatisticCard
+                bordered
+                style={{ flex: '1 1 120px' }}
                 statistic={{ title: 'TCP 连接', value: selected.tcp_connections }}
               />
-            </StatisticCard.Group>
+            </div>
 
             <Card size="small" style={{ marginBottom: 16 }}>
               <Row gutter={[8, 8]} style={{ fontSize: 13 }}>
@@ -357,12 +371,8 @@ const Machines: React.FC = () => {
                   height={260}
                   smooth
                   legend={metricField === 'net' ? { color: { position: 'top' } } : false}
-                  axis={{
-                    y: {
-                      labelFormatter: (v: number) =>
-                        isPercent ? `${v}%` : metricField === 'net' ? fmtRate(v) : `${v}`,
-                    },
-                  }}
+                  axis={{ y: { labelFormatter: valueFmt } }}
+                  tooltip={{ channel: 'y', valueFormatter: valueFmt }}
                   scale={isPercent ? { y: { domainMax: 100, domainMin: 0 } } : {}}
                   style={{ lineWidth: 2 }}
                 />
