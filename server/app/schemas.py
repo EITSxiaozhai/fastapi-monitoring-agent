@@ -21,6 +21,11 @@ class MetricIn(BaseModel):
     kernel: str = ""
     arch: str = ""
 
+    # 外网 IP 与所属国家
+    public_ip: str = Field("", max_length=64)
+    country_code: str = Field("", max_length=8)
+    country: str = Field("", max_length=64)
+
     cpu_count: int = 0
     cpu_percent: float = 0.0
     mem_total: int = 0
@@ -55,6 +60,9 @@ class AgentOut(BaseModel):
     os: str
     kernel: str
     arch: str
+    public_ip: str = ""
+    country_code: str = ""
+    country: str = ""
     cpu_count: int
     mem_total: int
     cpu_percent: float

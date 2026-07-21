@@ -27,6 +27,11 @@ class Agent(Base):
     kernel: Mapped[str] = mapped_column(String(255), default="")
     arch: Mapped[str] = mapped_column(String(32), default="")
 
+    # 外网 IP 与所属国家
+    public_ip: Mapped[str] = mapped_column(String(64), default="")
+    country_code: Mapped[str] = mapped_column(String(8), default="")
+    country: Mapped[str] = mapped_column(String(64), default="")
+
     cpu_count: Mapped[int] = mapped_column(Integer, default=0)
     mem_total: Mapped[int] = mapped_column(BigInteger, default=0)
 

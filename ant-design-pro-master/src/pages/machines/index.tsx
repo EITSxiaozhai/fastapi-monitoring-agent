@@ -54,6 +54,28 @@ function usageColor(p: number): string {
   return '#52c41a';
 }
 
+// 使用 flagcdn 图片渲染国旗（Windows 下 emoji 国旗无法正常显示）
+const CountryFlag: React.FC<{ code?: string; country?: string; ip?: string }> = ({
+  code,
+  country,
+  ip,
+}) => {
+  if (!code || code.length !== 2) return null;
+  const lower = code.toLowerCase();
+  return (
+    <Tooltip title={`${country || code}${ip ? ` · ${ip}` : ''}`}>
+      <img
+        src={`https://flagcdn.com/24x18/${lower}.png`}
+        srcSet={`https://flagcdn.com/48x36/${lower}.png 2x`}
+        width={24}
+        height={18}
+        alt={code}
+        style={{ borderRadius: 2, boxShadow: '0 0 1px rgba(0,0,0,0.35)', verticalAlign: 'middle' }}
+      />
+    </Tooltip>
+  );
+};
+
 const MachineCard: React.FC<{
   agent: AgentOut;
   onClick: () => void;
@@ -70,9 +92,16 @@ const MachineCard: React.FC<{
         </Space>
       }
       extra={
-        <Tag color={agent.online ? 'green' : 'red'}>
-          {agent.online ? '在线' : '离线'}
-        </Tag>
+        <Space size={6}>
+          <CountryFlag
+            code={agent.country_code}
+            country={agent.country}
+            ip={agent.public_ip}
+          />
+          <Tag color={agent.online ? 'green' : 'red'} style={{ marginInlineEnd: 0 }}>
+            {agent.online ? '在线' : '离线'}
+          </Tag>
+        </Space>
       }
     >
       <div style={{ color: '#8c8c8c', fontSize: 12, marginBottom: 12 }}>
@@ -341,6 +370,19 @@ const Machines: React.FC = () => {
                 <Col span={12}>网络 ↓：{fmtRate(selected.net_recv_rate)}</Col>
                 <Col span={12}>TCP(ESTAB)：{selected.tcp_established}</Col>
                 <Col span={12}>运行时长：{fmtUptime(selected.uptime_seconds)}</Col>
+                <Col span={12}>
+                  <Space size={6}>
+                    外网 IP：{selected.public_ip || '-'}
+                    <CountryFlag
+                      code={selected.country_code}
+                      country={selected.country}
+                      ip={selected.public_ip}
+                    />
+                  </Space>
+                </Col>
+                <Col span={12}>
+                  国家/地区：{selected.country || selected.country_code || '-'}
+                </Col>
                 <Col span={24}>Agent ID：{selected.agent_id}</Col>
               </Row>
             </Card>

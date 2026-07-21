@@ -31,6 +31,13 @@ async def _persist(session: AsyncSession, payload: MetricIn) -> Agent:
     agent.os = payload.os
     agent.kernel = payload.kernel
     agent.arch = payload.arch
+    # 外网 IP 查询可能暂时失败返回空，避免用空值覆盖历史有效值
+    if payload.public_ip:
+        agent.public_ip = payload.public_ip
+    if payload.country_code:
+        agent.country_code = payload.country_code
+    if payload.country:
+        agent.country = payload.country
     agent.cpu_count = payload.cpu_count
     agent.mem_total = payload.mem_total
     agent.cpu_percent = payload.cpu_percent

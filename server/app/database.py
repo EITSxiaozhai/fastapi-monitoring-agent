@@ -53,6 +53,9 @@ async def init_db() -> None:
 
         # 轻量级自动迁移：为已存在的旧表补充新增列（幂等）。
         migrations = [
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS public_ip VARCHAR(64) DEFAULT ''",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS country_code VARCHAR(8) DEFAULT ''",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS country VARCHAR(64) DEFAULT ''",
             "ALTER TABLE agents ADD COLUMN IF NOT EXISTS disk_total BIGINT DEFAULT 0",
             "ALTER TABLE agents ADD COLUMN IF NOT EXISTS disk_used BIGINT DEFAULT 0",
             "ALTER TABLE agents ADD COLUMN IF NOT EXISTS disk_percent DOUBLE PRECISION DEFAULT 0",

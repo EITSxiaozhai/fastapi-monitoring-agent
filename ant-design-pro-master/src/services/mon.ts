@@ -13,6 +13,9 @@ export interface AgentOut {
   os: string;
   kernel: string;
   arch: string;
+  public_ip: string;
+  country_code: string;
+  country: string;
   cpu_count: number;
   mem_total: number;
   cpu_percent: number;

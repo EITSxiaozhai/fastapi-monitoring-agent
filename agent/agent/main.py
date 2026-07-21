@@ -8,6 +8,7 @@ import signal
 import websockets
 from websockets.exceptions import ConnectionClosed
 
+from . import geoip
 from .collector import collect, prime
 from .config import AgentConfig
 
@@ -52,22 +53,35 @@ async def _report_loop(cfg: AgentConfig, stop: asyncio.Event) -> None:
                 pass
 
 
+async def _geo_refresh_loop(stop: asyncio.Event) -> None:
+    """周期性在线程池中刷新外网 IP/国家，避免阻塞上报循环。"""
+    loop = asyncio.get_running_loop()
+    while not stop.is_set():
+        try:
+            await asyncio.wait_for(stop.wait(), timeout=geoip._TTL)
+        except asyncio.TimeoutError:
+            await loop.run_in_executor(None, geoip.refresh, True)
+
+
 async def _main() -> None:
     cfg = AgentConfig.from_env()
     log.info("启动 mon-agent | agent_id=%s hostname=%s", cfg.agent_id, cfg.hostname)
     log.info("上报目标=%s 间隔=%ss", cfg.server_url, cfg.interval)
 
     prime()
-    await asyncio.sleep(1)  # 让 cpu_percent 建立基线
-
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
+    # 启动时先取一次外网 IP/国家（在线程池中执行，避免阻塞事件循环）
+    await loop.run_in_executor(None, geoip.refresh, True)
+    await asyncio.sleep(1)  # 让 cpu_percent 建立基线
+
     for sig in (signal.SIGINT, signal.SIGTERM):
         try:
             loop.add_signal_handler(sig, stop.set)
         except NotImplementedError:  # Windows 下部分信号不支持
             signal.signal(sig, lambda *_: stop.set())
 
+    geo_task = asyncio.create_task(_geo_refresh_loop(stop))
     backoff = 1
     while not stop.is_set():
         try:
@@ -86,6 +100,7 @@ async def _main() -> None:
         else:
             backoff = 1
 
+    geo_task.cancel()
     log.info("mon-agent 已停止")
 
 

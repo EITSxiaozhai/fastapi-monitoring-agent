@@ -18,6 +18,8 @@ import time
 
 import psutil
 
+from . import geoip
+
 # 指向宿主机 /proc（若已只读挂载），实现最小权限下的宿主机采集
 _host_proc = os.getenv("HOST_PROC")
 if _host_proc and os.path.isdir(_host_proc):
@@ -130,6 +132,7 @@ def collect() -> dict:
     disk_total, disk_used, disk_percent = _disk()
     net_sent_rate, net_recv_rate, net_bytes_sent, net_bytes_recv = _net_rate()
     tcp_connections, tcp_established = _tcp()
+    geo = geoip.current()
 
     return {
         "os": platform.system(),
@@ -157,6 +160,10 @@ def collect() -> dict:
         "tcp_established": tcp_established,
         # Top 进程
         "top_processes": _top_processes(_top_n),
+        # 外网 IP 与所属国家
+        "public_ip": geo["public_ip"],
+        "country_code": geo["country_code"],
+        "country": geo["country"],
     }
 
 

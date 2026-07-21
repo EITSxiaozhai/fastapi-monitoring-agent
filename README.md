@@ -25,7 +25,7 @@
 └─────────────────────┘ ◀──────────────────────────────  └──────────────┘
 ```
 
-采集指标：`os` / `kernel` / `arch` / `cpu_count` / `cpu_percent` / `mem_total` / `mem_used` / `mem_percent` / `process_count` / `load1` / `uptime`。
+采集指标：`os` / `kernel` / `arch` / `cpu_count` / `cpu_percent` / `mem_total` / `mem_used` / `mem_percent` / `process_count` / `load1` / `uptime` / `磁盘` / `网络 IO` / `TCP 连接` / `Top 进程` / `外网 IP + 国家`（卡片右上角显示国旗）。
 
 ---
 
@@ -98,10 +98,15 @@ npm run dev
 | --- | --- | --- |
 | `SERVER_URL` | `ws://localhost:8000` | 管理端地址（支持 `http(s)`/`ws(s)`，自动转换） |
 | `API_KEY` | `changeme-dev-key` | 上报鉴权 Key，需与后端一致 |
-| `INTERVAL` | `10` | 上报间隔（秒） |
+| `INTERVAL` | `2` | 上报间隔（秒） |
 | `AGENT_ID` | 自动 | 机器唯一标识，默认取 `/etc/machine-id` 或主机名派生 |
 | `AGENT_HOSTNAME` | 主机名 | 展示用主机名 |
 | `HOST_PROC` | 空 | 指向只读挂载的宿主机 `/proc`，用于采集宿主机而非容器数据 |
+| `DISK_PATH` | `/`（Win 为 `C:\`） | 磁盘使用率统计路径，可指向只读挂载的宿主机目录 |
+| `TOP_N` | `5` | 上报 CPU 占用最高的进程数量 |
+| `GEOIP_DISABLE` | 空 | 置 `1` 关闭外网 IP / 国家查询 |
+| `GEOIP_TTL` | `1800` | 外网 IP / 国家缓存有效期（秒） |
+| `GEOIP_ENDPOINT` | `ip-api.com` | 查询接口（需返回 `query`/`countryCode`/`country`） |
 
 ---
 
