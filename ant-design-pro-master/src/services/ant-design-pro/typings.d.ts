@@ -67,6 +67,7 @@ declare namespace API {
     password?: string;
     autoLogin?: boolean;
     type?: string;
+    cf_token?: string;
   };
 
   type ErrorResponse = {

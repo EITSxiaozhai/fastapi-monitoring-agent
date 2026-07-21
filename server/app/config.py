@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     # 服务端向前端广播实时快照的间隔（秒）
     broadcast_interval_seconds: float = 5.0
 
+    # Cloudflare Turnstile 人机验证
+    # sitekey 为前端公开使用；secret 留空则后端不校验（便于本地开发）
+    turnstile_sitekey: str = ""
+    turnstile_secret: str = ""
+
     # 服务监听
     host: str = "0.0.0.0"
     port: int = 8000
