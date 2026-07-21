@@ -3,13 +3,13 @@ services:
   db:
     image: timescale/timescaledb:latest-pg16
     environment:
-      POSTGRES_USER: mon
+      POSTGRES_USER: ${DB_USER:-mon}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-mon}
-      POSTGRES_DB: mon
+      POSTGRES_DB: ${DB_NAME:-mon}
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mon -d mon"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-mon} -d ${DB_NAME:-mon}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -21,7 +21,7 @@ services:
       context: .
       dockerfile: server/Dockerfile
     environment:
-      MON_DATABASE_URL: postgresql+asyncpg://mon:${DB_PASSWORD:-mon}@db:5432/mon
+      MON_DATABASE_URL: postgresql+asyncpg://${DB_USER:-mon}:${DB_PASSWORD:-mon}@${DB_HOST:-db}:${DB_PORT:-5432}/${DB_NAME:-mon}
       MON_API_KEYS: ${API_KEY:-changeme-dev-key}
       MON_OFFLINE_THRESHOLD_SECONDS: "60"
       MON_ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
