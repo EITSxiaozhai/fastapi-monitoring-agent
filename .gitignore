@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# uv
+.uv/
+
+# 环境变量
+.env
+
+# IDE
+.idea/
+.vscode/
+
+# 日志
+*.log

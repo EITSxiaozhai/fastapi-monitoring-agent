@@ -1,0 +1,73 @@
+services:
+  # ---------- 时序数据库 ----------
+  db:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: mon
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-mon}
+      POSTGRES_DB: mon
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mon -d mon"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ---------- 管理端(后端 API + WebSocket) ----------
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    environment:
+      MON_DATABASE_URL: postgresql+asyncpg://mon:${DB_PASSWORD:-mon}@db:5432/mon
+      MON_API_KEYS: ${API_KEY:-changeme-dev-key}
+      MON_OFFLINE_THRESHOLD_SECONDS: "60"
+      MON_ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      MON_ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      MON_JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please}
+    depends_on:
+      db:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  # ---------- 前端(Ant Design Pro，由 Nginx 提供并反代 /api /ws) ----------
+  web:
+    build:
+      context: ./ant-design-pro-master/ant-design-pro-master
+      dockerfile: Dockerfile.mon
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+    restart: unless-stopped
+
+  # ---------- 客户端(示例：监控运行 Docker 的宿主机) ----------
+  agent:
+    build:
+      context: .
+      dockerfile: agent/Dockerfile
+    environment:
+      SERVER_URL: ws://server:8000
+      API_KEY: ${API_KEY:-changeme-dev-key}
+      INTERVAL: "10"
+      HOST_PROC: /host/proc
+      AGENT_HOSTNAME: ${HOSTNAME:-docker-host}
+    volumes:
+      # 只读挂载宿主机 /proc，实现最小权限下的宿主机采集
+      - /proc:/host/proc:ro
+    depends_on:
+      - server
+    # 权限最小化：丢弃所有 Linux capabilities、禁止提权、只读根文件系统
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    restart: unless-stopped
+
+volumes:
+  db-data:
