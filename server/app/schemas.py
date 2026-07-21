@@ -5,6 +5,13 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
+class ProcessInfo(BaseModel):
+    pid: int = 0
+    name: str = ""
+    cpu_percent: float = 0.0
+    mem_percent: float = 0.0
+
+
 class MetricIn(BaseModel):
     """客户端上报的数据结构。"""
 
@@ -23,6 +30,24 @@ class MetricIn(BaseModel):
     load1: float = 0.0
     uptime_seconds: int = 0
 
+    # 磁盘
+    disk_total: int = 0
+    disk_used: int = 0
+    disk_percent: float = 0.0
+
+    # 网络 IO
+    net_sent_rate: float = 0.0
+    net_recv_rate: float = 0.0
+    net_bytes_sent: int = 0
+    net_bytes_recv: int = 0
+
+    # TCP 连接
+    tcp_connections: int = 0
+    tcp_established: int = 0
+
+    # Top 进程
+    top_processes: list[ProcessInfo] = Field(default_factory=list)
+
 
 class AgentOut(BaseModel):
     agent_id: str
@@ -38,6 +63,18 @@ class AgentOut(BaseModel):
     process_count: int
     load1: float
     uptime_seconds: int
+
+    disk_total: int = 0
+    disk_used: int = 0
+    disk_percent: float = 0.0
+    net_sent_rate: float = 0.0
+    net_recv_rate: float = 0.0
+    net_bytes_sent: int = 0
+    net_bytes_recv: int = 0
+    tcp_connections: int = 0
+    tcp_established: int = 0
+    top_processes: list[ProcessInfo] = Field(default_factory=list)
+
     first_seen: datetime
     last_seen: datetime
     online: bool
@@ -53,6 +90,10 @@ class MetricPoint(BaseModel):
     mem_used: int
     process_count: int
     load1: float
+    disk_percent: float = 0.0
+    net_sent_rate: float = 0.0
+    net_recv_rate: float = 0.0
+    tcp_connections: int = 0
 
     class Config:
         from_attributes = True

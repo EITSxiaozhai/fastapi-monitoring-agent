@@ -6,7 +6,9 @@
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, Integer, String
+from typing import Any
+
+from sqlalchemy import JSON, BigInteger, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -36,6 +38,24 @@ class Agent(Base):
     load1: Mapped[float] = mapped_column(Float, default=0.0)
     uptime_seconds: Mapped[int] = mapped_column(BigInteger, default=0)
 
+    # 磁盘
+    disk_total: Mapped[int] = mapped_column(BigInteger, default=0)
+    disk_used: Mapped[int] = mapped_column(BigInteger, default=0)
+    disk_percent: Mapped[float] = mapped_column(Float, default=0.0)
+
+    # 网络 IO
+    net_sent_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    net_recv_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    net_bytes_sent: Mapped[int] = mapped_column(BigInteger, default=0)
+    net_bytes_recv: Mapped[int] = mapped_column(BigInteger, default=0)
+
+    # TCP 连接
+    tcp_connections: Mapped[int] = mapped_column(Integer, default=0)
+    tcp_established: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Top 进程（最新快照，JSON 列表）
+    top_processes: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+
     first_seen: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -58,3 +78,7 @@ class Metric(Base):
     mem_used: Mapped[int] = mapped_column(BigInteger, default=0)
     process_count: Mapped[int] = mapped_column(Integer, default=0)
     load1: Mapped[float] = mapped_column(Float, default=0.0)
+    disk_percent: Mapped[float] = mapped_column(Float, default=0.0)
+    net_sent_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    net_recv_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    tcp_connections: Mapped[int] = mapped_column(Integer, default=0)

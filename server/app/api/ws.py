@@ -39,6 +39,16 @@ async def _persist(session: AsyncSession, payload: MetricIn) -> Agent:
     agent.process_count = payload.process_count
     agent.load1 = payload.load1
     agent.uptime_seconds = payload.uptime_seconds
+    agent.disk_total = payload.disk_total
+    agent.disk_used = payload.disk_used
+    agent.disk_percent = payload.disk_percent
+    agent.net_sent_rate = payload.net_sent_rate
+    agent.net_recv_rate = payload.net_recv_rate
+    agent.net_bytes_sent = payload.net_bytes_sent
+    agent.net_bytes_recv = payload.net_bytes_recv
+    agent.tcp_connections = payload.tcp_connections
+    agent.tcp_established = payload.tcp_established
+    agent.top_processes = [p.model_dump() for p in payload.top_processes]
     agent.last_seen = now
 
     session.add(
@@ -50,6 +60,10 @@ async def _persist(session: AsyncSession, payload: MetricIn) -> Agent:
             mem_used=payload.mem_used,
             process_count=payload.process_count,
             load1=payload.load1,
+            disk_percent=payload.disk_percent,
+            net_sent_rate=payload.net_sent_rate,
+            net_recv_rate=payload.net_recv_rate,
+            tcp_connections=payload.tcp_connections,
         )
     )
     await session.commit()

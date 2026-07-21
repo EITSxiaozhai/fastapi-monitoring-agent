@@ -1,5 +1,12 @@
 import { request } from '@umijs/max';
 
+export interface ProcessInfo {
+  pid: number;
+  name: string;
+  cpu_percent: number;
+  mem_percent: number;
+}
+
 export interface AgentOut {
   agent_id: string;
   hostname: string;
@@ -14,6 +21,16 @@ export interface AgentOut {
   process_count: number;
   load1: number;
   uptime_seconds: number;
+  disk_total: number;
+  disk_used: number;
+  disk_percent: number;
+  net_sent_rate: number;
+  net_recv_rate: number;
+  net_bytes_sent: number;
+  net_bytes_recv: number;
+  tcp_connections: number;
+  tcp_established: number;
+  top_processes: ProcessInfo[];
   first_seen: string;
   last_seen: string;
   online: boolean;
@@ -34,6 +51,10 @@ export interface MetricPoint {
   mem_used: number;
   process_count: number;
   load1: number;
+  disk_percent: number;
+  net_sent_rate: number;
+  net_recv_rate: number;
+  tcp_connections: number;
 }
 
 export type WsMessage =

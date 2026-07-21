@@ -18,7 +18,10 @@ def is_online(last_seen: datetime) -> bool:
 
 
 def to_agent_out(agent: Agent) -> AgentOut:
-    return AgentOut(**{**agent.__dict__, "online": is_online(agent.last_seen)})
+    data = {**agent.__dict__, "online": is_online(agent.last_seen)}
+    if data.get("top_processes") is None:
+        data["top_processes"] = []
+    return AgentOut(**data)
 
 
 async def build_snapshot(session: AsyncSession) -> dict:

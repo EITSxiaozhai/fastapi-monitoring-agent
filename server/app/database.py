@@ -51,6 +51,29 @@ async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+        # 轻量级自动迁移：为已存在的旧表补充新增列（幂等）。
+        migrations = [
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS disk_total BIGINT DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS disk_used BIGINT DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS disk_percent DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_sent_rate DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_recv_rate DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_bytes_sent BIGINT DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_bytes_recv BIGINT DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS tcp_connections INTEGER DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS tcp_established INTEGER DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS top_processes JSON",
+            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS disk_percent DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_sent_rate DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_recv_rate DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS tcp_connections INTEGER DEFAULT 0",
+        ]
+        for sql in migrations:
+            try:
+                await conn.execute(text(sql))
+            except Exception:  # noqa: BLE001 - 非 PostgreSQL 或已存在时忽略
+                pass
+
         # 尝试启用 TimescaleDB 扩展并转换 hypertable。
         try:
             await conn.execute(text("CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE"))
