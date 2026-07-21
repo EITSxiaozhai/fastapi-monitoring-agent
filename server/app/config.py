@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     # 服务端向前端广播实时快照的间隔（秒）
     broadcast_interval_seconds: float = 5.0
 
+    # 允许跨域访问的前端来源（多个用逗号分隔）。
+    # "*" 表示允许任意来源（开发便捷；此时会以正则反射来源以兼容携带凭据的请求）。
+    # 生产建议显式配置，如：https://mon.example.com,https://admin.example.com
+    cors_origins: str = "*"
+
     # Cloudflare Turnstile 人机验证
     # sitekey 为前端公开使用；secret 留空则后端不校验（便于本地开发）
     turnstile_sitekey: str = ""
@@ -42,6 +47,10 @@ class Settings(BaseSettings):
     @property
     def api_key_set(self) -> set[str]:
         return {k.strip() for k in self.api_keys.split(",") if k.strip()}
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
 
 @lru_cache

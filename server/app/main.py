@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import auth, dashboard, ws
+from .config import get_settings
 from .database import dispose_db, init_db
 from .realtime import broadcaster
 
@@ -27,14 +28,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# 前端为独立 Ant Design Pro 项目，开发期允许跨域
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# 前端为独立 Ant Design Pro 项目，需允许跨域。来源通过 MON_CORS_ORIGINS 配置。
+_origins = get_settings().cors_origin_list
+_cors_kwargs: dict = {
+    "allow_credentials": True,
+    "allow_methods": ["*"],
+    "allow_headers": ["*"],
+}
+if _origins == ["*"]:
+    # 通配 + 凭据不被浏览器接受，改用正则反射请求来源
+    _cors_kwargs["allow_origin_regex"] = ".*"
+else:
+    _cors_kwargs["allow_origins"] = _origins
+app.add_middleware(CORSMiddleware, **_cors_kwargs)
 
 app.include_router(auth.router)
 app.include_router(dashboard.router)

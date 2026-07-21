@@ -27,6 +27,7 @@ services:
       MON_ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       MON_ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
       MON_JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please}
+      MON_CORS_ORIGINS: ${CORS_ORIGINS:-*}
       MON_TURNSTILE_SITEKEY: ${TURNSTILE_SITEKEY:-}
       MON_TURNSTILE_SECRET: ${TURNSTILE_SECRET:-}
     depends_on:

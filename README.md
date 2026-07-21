@@ -90,6 +90,7 @@ npm run dev
 | `MON_ADMIN_PASSWORD` | `admin123` | 前端登录密码 |
 | `MON_JWT_SECRET` | `change-me-...` | JWT 签名密钥（生产务必修改） |
 | `MON_JWT_EXPIRE_MINUTES` | `1440` | 令牌有效期（分钟） |
+| `MON_CORS_ORIGINS` | `*` | 允许跨域的前端来源，多个逗号分隔；生产建议显式配置域名 |
 | `MON_BROADCAST_INTERVAL_SECONDS` | `5` | 服务端向前端广播全量快照的间隔 |
 
 ### 客户端（环境变量）
