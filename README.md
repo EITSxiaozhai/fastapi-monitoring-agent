@@ -106,7 +106,7 @@ npm run dev
 | `TOP_N` | `5` | 上报 CPU 占用最高的进程数量 |
 | `GEOIP_DISABLE` | 空 | 置 `1` 关闭外网 IP / 国家查询 |
 | `GEOIP_TTL` | `1800` | 外网 IP / 国家缓存有效期（秒） |
-| `GEOIP_ENDPOINT` | `ip-api.com` | 查询接口（需返回 `query`/`countryCode`/`country`） |
+| `GEOIP_ENDPOINT` | `https://ipwho.is/` | 外网 IP/国家查询接口（HTTPS、免费、无需 key；兼容 ip-api 字段） |
 
 ---
 

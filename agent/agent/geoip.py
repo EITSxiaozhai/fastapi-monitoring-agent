@@ -1,13 +1,14 @@
 """外网 IP 与所属国家查询（带缓存）。
 
-- 仅通过一次**出站 HTTP 请求**查询公网出口 IP 及国家，属于只读观测，
-  不需要任何提权/特权容器。
+- 默认使用 ipwho.is（HTTPS、免费、无需 API key）查询公网出口 IP 及国家，
+  属于只读观测，不需要任何提权/特权容器。
 - 使用标准库 urllib，避免引入额外依赖。
 - 结果在进程内缓存，默认每 30 分钟刷新一次（公网 IP 很少变动），
   查询失败时静默降级为上一次结果（或空值），不影响其他指标上报。
 
 可通过环境变量调整：
-- GEOIP_ENDPOINT：查询接口（需返回 query/countryCode/country 字段）
+- GEOIP_ENDPOINT：查询接口（兼容 ipwho.is 的 ip/country_code 与
+  ip-api 的 query/countryCode 两种字段命名）
 - GEOIP_TTL：缓存有效期（秒）
 - GEOIP_DISABLE=1：完全关闭外网 IP 查询
 """
@@ -22,10 +23,8 @@ log = logging.getLogger("mon-agent.geoip")
 
 _DISABLED = os.getenv("GEOIP_DISABLE", "").lower() in ("1", "true", "yes")
 _TTL = float(os.getenv("GEOIP_TTL", "1800"))
-_ENDPOINT = os.getenv(
-    "GEOIP_ENDPOINT",
-    "http://ip-api.com/json/?fields=status,message,query,countryCode,country",
-)
+# 默认使用 ipwho.is（HTTPS、免费、无需 API key）
+_ENDPOINT = os.getenv("GEOIP_ENDPOINT", "https://ipwho.is/")
 
 _cache: dict = {"public_ip": "", "country_code": "", "country": ""}
 _fetched_at: float = 0.0
@@ -35,11 +34,15 @@ def _fetch() -> dict:
     req = urllib.request.Request(_ENDPOINT, headers={"User-Agent": "mon-agent"})
     with urllib.request.urlopen(req, timeout=5) as resp:  # noqa: S310 - 固定可信端点
         data = json.loads(resp.read().decode("utf-8"))
-    if data.get("status") == "fail":
-        raise RuntimeError(data.get("message", "geoip lookup failed"))
+    # 失败判定：ipwho.is 用 success=false；ip-api 用 status="fail"
+    if data.get("success") is False or data.get("status") == "fail":
+        raise RuntimeError(data.get("message") or "geoip lookup failed")
+    # 兼容两种字段命名：ipwho.is(ip/country_code) 与 ip-api(query/countryCode)
+    ip = data.get("ip") or data.get("query") or ""
+    code = data.get("country_code") or data.get("countryCode") or ""
     return {
-        "public_ip": data.get("query") or "",
-        "country_code": (data.get("countryCode") or "").upper(),
+        "public_ip": ip,
+        "country_code": code.upper(),
         "country": data.get("country") or "",
     }
 
