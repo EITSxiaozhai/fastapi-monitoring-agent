@@ -63,6 +63,16 @@ async def init_db() -> None:
             "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_recv_rate DOUBLE PRECISION DEFAULT 0",
             "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_bytes_sent BIGINT DEFAULT 0",
             "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_bytes_recv BIGINT DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_errin BIGINT DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_errout BIGINT DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_dropin BIGINT DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_dropout BIGINT DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_errin_rate DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_errout_rate DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_dropin_rate DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_dropout_rate DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS tcp_retrans BIGINT DEFAULT 0",
+            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS tcp_retrans_rate DOUBLE PRECISION DEFAULT 0",
             "ALTER TABLE agents ADD COLUMN IF NOT EXISTS tcp_connections INTEGER DEFAULT 0",
             "ALTER TABLE agents ADD COLUMN IF NOT EXISTS tcp_established INTEGER DEFAULT 0",
             "ALTER TABLE agents ADD COLUMN IF NOT EXISTS top_processes JSON",
@@ -70,6 +80,11 @@ async def init_db() -> None:
             "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_sent_rate DOUBLE PRECISION DEFAULT 0",
             "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_recv_rate DOUBLE PRECISION DEFAULT 0",
             "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS tcp_connections INTEGER DEFAULT 0",
+            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_errin_rate DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_errout_rate DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_dropin_rate DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_dropout_rate DOUBLE PRECISION DEFAULT 0",
+            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS tcp_retrans_rate DOUBLE PRECISION DEFAULT 0",
         ]
         for sql in migrations:
             try:

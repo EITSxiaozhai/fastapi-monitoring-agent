@@ -31,6 +31,16 @@ export interface AgentOut {
   net_recv_rate: number;
   net_bytes_sent: number;
   net_bytes_recv: number;
+  net_errin: number;
+  net_errout: number;
+  net_dropin: number;
+  net_dropout: number;
+  net_errin_rate: number;
+  net_errout_rate: number;
+  net_dropin_rate: number;
+  net_dropout_rate: number;
+  tcp_retrans: number;
+  tcp_retrans_rate: number;
   tcp_connections: number;
   tcp_established: number;
   top_processes: ProcessInfo[];
@@ -58,6 +68,11 @@ export interface MetricPoint {
   net_sent_rate: number;
   net_recv_rate: number;
   tcp_connections: number;
+  net_errin_rate: number;
+  net_errout_rate: number;
+  net_dropin_rate: number;
+  net_dropout_rate: number;
+  tcp_retrans_rate: number;
 }
 
 export type WsMessage =

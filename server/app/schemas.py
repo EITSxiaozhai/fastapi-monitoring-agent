@@ -45,6 +45,17 @@ class MetricIn(BaseModel):
     net_recv_rate: float = 0.0
     net_bytes_sent: int = 0
     net_bytes_recv: int = 0
+    # 网络质量（错误 / 丢包 / TCP 重传）
+    net_errin: int = 0
+    net_errout: int = 0
+    net_dropin: int = 0
+    net_dropout: int = 0
+    net_errin_rate: float = 0.0
+    net_errout_rate: float = 0.0
+    net_dropin_rate: float = 0.0
+    net_dropout_rate: float = 0.0
+    tcp_retrans: int = 0
+    tcp_retrans_rate: float = 0.0
 
     # TCP 连接
     tcp_connections: int = 0
@@ -79,6 +90,16 @@ class AgentOut(BaseModel):
     net_recv_rate: float = 0.0
     net_bytes_sent: int = 0
     net_bytes_recv: int = 0
+    net_errin: int = 0
+    net_errout: int = 0
+    net_dropin: int = 0
+    net_dropout: int = 0
+    net_errin_rate: float = 0.0
+    net_errout_rate: float = 0.0
+    net_dropin_rate: float = 0.0
+    net_dropout_rate: float = 0.0
+    tcp_retrans: int = 0
+    tcp_retrans_rate: float = 0.0
     tcp_connections: int = 0
     tcp_established: int = 0
     top_processes: list[ProcessInfo] = Field(default_factory=list)
@@ -102,6 +123,11 @@ class MetricPoint(BaseModel):
     net_sent_rate: float = 0.0
     net_recv_rate: float = 0.0
     tcp_connections: int = 0
+    net_errin_rate: float = 0.0
+    net_errout_rate: float = 0.0
+    net_dropin_rate: float = 0.0
+    net_dropout_rate: float = 0.0
+    tcp_retrans_rate: float = 0.0
 
     class Config:
         from_attributes = True

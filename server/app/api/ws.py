@@ -53,6 +53,16 @@ async def _persist(session: AsyncSession, payload: MetricIn) -> Agent:
     agent.net_recv_rate = payload.net_recv_rate
     agent.net_bytes_sent = payload.net_bytes_sent
     agent.net_bytes_recv = payload.net_bytes_recv
+    agent.net_errin = payload.net_errin
+    agent.net_errout = payload.net_errout
+    agent.net_dropin = payload.net_dropin
+    agent.net_dropout = payload.net_dropout
+    agent.net_errin_rate = payload.net_errin_rate
+    agent.net_errout_rate = payload.net_errout_rate
+    agent.net_dropin_rate = payload.net_dropin_rate
+    agent.net_dropout_rate = payload.net_dropout_rate
+    agent.tcp_retrans = payload.tcp_retrans
+    agent.tcp_retrans_rate = payload.tcp_retrans_rate
     agent.tcp_connections = payload.tcp_connections
     agent.tcp_established = payload.tcp_established
     agent.top_processes = [p.model_dump() for p in payload.top_processes]
@@ -71,6 +81,11 @@ async def _persist(session: AsyncSession, payload: MetricIn) -> Agent:
             net_sent_rate=payload.net_sent_rate,
             net_recv_rate=payload.net_recv_rate,
             tcp_connections=payload.tcp_connections,
+            net_errin_rate=payload.net_errin_rate,
+            net_errout_rate=payload.net_errout_rate,
+            net_dropin_rate=payload.net_dropin_rate,
+            net_dropout_rate=payload.net_dropout_rate,
+            tcp_retrans_rate=payload.tcp_retrans_rate,
         )
     )
     await session.commit()

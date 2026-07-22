@@ -1,6 +1,6 @@
 """指标采集。
 
-使用 psutil 采集 CPU / 内存 / 进程数 / 负载 / 磁盘 / 网络IO / TCP连接 / Top进程 等指标。
+使用 psutil 采集 CPU / 内存 / 进程数 / 负载 / 磁盘 / 网络IO与质量 / TCP连接 / Top进程 等指标。
 
 安全与最小权限原则：
 - 本采集器只做**只读**观测，不需要任何提权、特权容器或 host PID 命名空间。
@@ -15,6 +15,7 @@
 import os
 import platform
 import time
+from pathlib import Path
 
 import psutil
 
@@ -31,8 +32,8 @@ _disk_path = os.getenv("DISK_PATH") or ("C:\\" if os.name == "nt" else "/")
 # Top 进程数量
 _top_n = int(os.getenv("TOP_N", "5"))
 
-# 用于计算网络 IO 速率的上一次采样：(时间戳, 累计发送, 累计接收)
-_prev_net: tuple[float, int, int] | None = None
+# 网络采样基线：(时间戳, bytes_sent, bytes_recv, errin, errout, dropin, dropout, tcp_retrans)
+_prev_net: tuple[float, int, int, int, int, int, int, int] | None = None
 
 
 def _kernel() -> str:
@@ -49,23 +50,114 @@ def _disk() -> tuple[int, int, float]:
         return 0, 0, 0.0
 
 
-def _net_rate() -> tuple[float, float, int, int]:
-    """返回 (发送速率B/s, 接收速率B/s, 累计发送B, 累计接收B)。"""
+def _tcp_retrans_total() -> int:
+    """读取 TCP 累计重传段数（Linux: /proc/net/snmp 的 RetransSegs）。只读，无需提权。"""
+    proc = getattr(psutil, "PROCFS_PATH", "/proc")
+    path = os.path.join(proc, "net", "snmp")
+    try:
+        lines = Path(path).read_text(encoding="utf-8", errors="ignore").splitlines()
+    except OSError:
+        return 0
+    header: list[str] | None = None
+    for line in lines:
+        if not line.startswith("Tcp:"):
+            continue
+        parts = line.split()[1:]
+        if header is None:
+            header = parts
+            continue
+        if header and "RetransSegs" in header:
+            idx = header.index("RetransSegs")
+            if idx < len(parts):
+                try:
+                    return int(parts[idx])
+                except ValueError:
+                    return 0
+    return 0
+
+
+def _net_quality() -> dict:
+    """采集网络吞吐与质量指标（只读 net_io_counters + /proc/net/snmp）。
+
+    返回速率（/s）与累计计数：
+    - 吞吐：net_sent_rate / net_recv_rate / net_bytes_*
+    - 错误：net_errin / net_errout 及对应速率
+    - 丢包：net_dropin / net_dropout 及对应速率
+    - TCP 重传：tcp_retrans / tcp_retrans_rate（非 Linux 时为 0）
+    """
     global _prev_net
+    empty = {
+        "net_sent_rate": 0.0,
+        "net_recv_rate": 0.0,
+        "net_bytes_sent": 0,
+        "net_bytes_recv": 0,
+        "net_errin": 0,
+        "net_errout": 0,
+        "net_dropin": 0,
+        "net_dropout": 0,
+        "net_errin_rate": 0.0,
+        "net_errout_rate": 0.0,
+        "net_dropin_rate": 0.0,
+        "net_dropout_rate": 0.0,
+        "tcp_retrans": 0,
+        "tcp_retrans_rate": 0.0,
+    }
     try:
         io = psutil.net_io_counters()
     except Exception:  # noqa: BLE001
-        return 0.0, 0.0, 0, 0
+        return empty
+
+    errin = int(getattr(io, "errin", 0) or 0)
+    errout = int(getattr(io, "errout", 0) or 0)
+    dropin = int(getattr(io, "dropin", 0) or 0)
+    dropout = int(getattr(io, "dropout", 0) or 0)
+    retrans = _tcp_retrans_total()
     now = time.monotonic()
+
     sent_rate = recv_rate = 0.0
+    errin_rate = errout_rate = dropin_rate = dropout_rate = retrans_rate = 0.0
     if _prev_net is not None:
-        prev_t, prev_s, prev_r = _prev_net
+        prev_t, prev_s, prev_r, prev_ei, prev_eo, prev_di, prev_do, prev_rt = _prev_net
         elapsed = now - prev_t
         if elapsed > 0:
-            sent_rate = max(0.0, (io.bytes_sent - prev_s) / elapsed)
-            recv_rate = max(0.0, (io.bytes_recv - prev_r) / elapsed)
-    _prev_net = (now, io.bytes_sent, io.bytes_recv)
-    return round(sent_rate, 1), round(recv_rate, 1), io.bytes_sent, io.bytes_recv
+
+            def _rate(cur: int, prev: int) -> float:
+                return max(0.0, (cur - prev) / elapsed)
+
+            sent_rate = _rate(io.bytes_sent, prev_s)
+            recv_rate = _rate(io.bytes_recv, prev_r)
+            errin_rate = _rate(errin, prev_ei)
+            errout_rate = _rate(errout, prev_eo)
+            dropin_rate = _rate(dropin, prev_di)
+            dropout_rate = _rate(dropout, prev_do)
+            retrans_rate = _rate(retrans, prev_rt)
+
+    _prev_net = (
+        now,
+        io.bytes_sent,
+        io.bytes_recv,
+        errin,
+        errout,
+        dropin,
+        dropout,
+        retrans,
+    )
+    return {
+        "net_sent_rate": round(sent_rate, 1),
+        "net_recv_rate": round(recv_rate, 1),
+        "net_bytes_sent": io.bytes_sent,
+        "net_bytes_recv": io.bytes_recv,
+        "net_errin": errin,
+        "net_errout": errout,
+        "net_dropin": dropin,
+        "net_dropout": dropout,
+        "net_errin_rate": round(errin_rate, 2),
+        "net_errout_rate": round(errout_rate, 2),
+        "net_dropin_rate": round(dropin_rate, 2),
+        "net_dropout_rate": round(dropout_rate, 2),
+        "tcp_retrans": retrans,
+        "tcp_retrans_rate": round(retrans_rate, 2),
+    }
 
 
 def _tcp() -> tuple[int, int]:
@@ -130,7 +222,7 @@ def collect() -> dict:
         uptime = 0
 
     disk_total, disk_used, disk_percent = _disk()
-    net_sent_rate, net_recv_rate, net_bytes_sent, net_bytes_recv = _net_rate()
+    net = _net_quality()
     tcp_connections, tcp_established = _tcp()
     geo = geoip.current()
 
@@ -150,11 +242,8 @@ def collect() -> dict:
         "disk_total": disk_total,
         "disk_used": disk_used,
         "disk_percent": disk_percent,
-        # 网络 IO
-        "net_sent_rate": net_sent_rate,
-        "net_recv_rate": net_recv_rate,
-        "net_bytes_sent": net_bytes_sent,
-        "net_bytes_recv": net_bytes_recv,
+        # 网络 IO + 质量（错误/丢包/TCP重传）
+        **net,
         # TCP 连接
         "tcp_connections": tcp_connections,
         "tcp_established": tcp_established,
@@ -168,6 +257,6 @@ def collect() -> dict:
 
 
 def prime() -> None:
-    """预热 cpu_percent 与网络速率基线（首次调用返回 0，需先建立基线）。"""
+    """预热 cpu_percent 与网络质量基线（首次调用返回 0，需先建立基线）。"""
     psutil.cpu_percent(interval=None)
-    _net_rate()
+    _net_quality()

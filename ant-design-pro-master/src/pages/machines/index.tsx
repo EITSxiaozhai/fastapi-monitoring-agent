@@ -38,6 +38,13 @@ function fmtRate(n: number): string {
   return `${fmtBytes(n)}/s`;
 }
 
+/** 包/错误/丢包/重传速率，统一显示为 N/s */
+function fmtPktRate(n: number | undefined): string {
+  const v = n ?? 0;
+  if (v >= 100) return `${Math.round(v)}/s`;
+  return `${v.toFixed(1)}/s`;
+}
+
 function fmtUptime(s: number): string {
   if (!s) return '-';
   const d = Math.floor(s / 86400);
@@ -52,6 +59,10 @@ function usageColor(p: number): string {
   if (p >= 90) return '#ff4d4f';
   if (p >= 70) return '#faad14';
   return '#52c41a';
+}
+
+function qualityWarn(n: number | undefined): string {
+  return (n ?? 0) > 0 ? '#ff4d4f' : 'rgba(0,0,0,0.85)';
 }
 
 // 使用 flagcdn 图片渲染国旗（Windows 下 emoji 国旗无法正常显示）
@@ -154,6 +165,30 @@ const MachineCard: React.FC<{
           <b style={{ color: 'rgba(0,0,0,0.85)' }}>{fmtRate(agent.net_recv_rate)}</b>
         </Col>
         <Col span={8}>
+          <Tooltip title={`入 ${fmtPktRate(agent.net_dropin_rate)} · 出 ${fmtPktRate(agent.net_dropout_rate)}`}>
+            丢包{' '}
+            <b style={{ color: qualityWarn((agent.net_dropin_rate ?? 0) + (agent.net_dropout_rate ?? 0)) }}>
+              {fmtPktRate((agent.net_dropin_rate ?? 0) + (agent.net_dropout_rate ?? 0))}
+            </b>
+          </Tooltip>
+        </Col>
+        <Col span={8}>
+          <Tooltip title={`入 ${fmtPktRate(agent.net_errin_rate)} · 出 ${fmtPktRate(agent.net_errout_rate)}`}>
+            错误{' '}
+            <b style={{ color: qualityWarn((agent.net_errin_rate ?? 0) + (agent.net_errout_rate ?? 0)) }}>
+              {fmtPktRate((agent.net_errin_rate ?? 0) + (agent.net_errout_rate ?? 0))}
+            </b>
+          </Tooltip>
+        </Col>
+        <Col span={8}>
+          <Tooltip title={`累计重传 ${agent.tcp_retrans ?? 0}`}>
+            重传{' '}
+            <b style={{ color: qualityWarn(agent.tcp_retrans_rate) }}>
+              {fmtPktRate(agent.tcp_retrans_rate)}
+            </b>
+          </Tooltip>
+        </Col>
+        <Col span={8}>
           进程 <b style={{ color: 'rgba(0,0,0,0.85)' }}>{agent.process_count}</b>
         </Col>
         <Col span={8}>
@@ -179,12 +214,11 @@ const Machines: React.FC = () => {
     avg_mem: 0,
   });
   const [connected, setConnected] = useState(false);
-  const [metricField, setMetricField] = useState<'cpu' | 'mem' | 'disk' | 'net' | 'tcp'>('cpu');
-
+  const [metricField, setMetricField] = useState<'cpu' | 'mem' | 'disk' | 'net' | 'quality' | 'tcp'>('cpu');
   const [selected, setSelected] = useState<AgentOut | null>(null);
   const [history, setHistory] = useState<MetricPoint[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  type MetricField = 'cpu' | 'mem' | 'disk' | 'net' | 'tcp';
+  type MetricField = 'cpu' | 'mem' | 'disk' | 'net' | 'quality' | 'tcp';
 
   const subRef = useRef<{ close: () => void } | null>(null);
 
@@ -226,9 +260,15 @@ const Machines: React.FC = () => {
 
   // 统一坐标轴与 tooltip 的数值单位
   const valueFmt = (v: number) =>
-    isPercent ? `${v}%` : metricField === 'net' ? fmtRate(v) : `${v}`;
+    isPercent
+      ? `${v}%`
+      : metricField === 'net'
+        ? fmtRate(v)
+        : metricField === 'quality'
+          ? fmtPktRate(v)
+          : `${v}`;
 
-  // net 为双序列(上行/下行)；其余为单序列
+  // net / quality 为多序列；其余为单序列
   const historyData = useMemo(() => {
     if (metricField === 'net') {
       return history.flatMap((p) => {
@@ -236,6 +276,16 @@ const Machines: React.FC = () => {
         return [
           { time: t, value: p.net_sent_rate, series: '上行' },
           { time: t, value: p.net_recv_rate, series: '下行' },
+        ];
+      });
+    }
+    if (metricField === 'quality') {
+      return history.flatMap((p) => {
+        const t = new Date(p.time).toLocaleTimeString('zh-CN');
+        return [
+          { time: t, value: (p.net_dropin_rate ?? 0) + (p.net_dropout_rate ?? 0), series: '丢包' },
+          { time: t, value: (p.net_errin_rate ?? 0) + (p.net_errout_rate ?? 0), series: '错误' },
+          { time: t, value: p.tcp_retrans_rate ?? 0, series: '重传' },
         ];
       });
     }
@@ -368,6 +418,27 @@ const Machines: React.FC = () => {
                 <Col span={12}>磁盘已用：{fmtBytes(selected.disk_used)}</Col>
                 <Col span={12}>网络 ↑：{fmtRate(selected.net_sent_rate)}</Col>
                 <Col span={12}>网络 ↓：{fmtRate(selected.net_recv_rate)}</Col>
+                <Col span={12}>
+                  丢包速率：
+                  <span style={{ color: qualityWarn((selected.net_dropin_rate ?? 0) + (selected.net_dropout_rate ?? 0)) }}>
+                    {fmtPktRate((selected.net_dropin_rate ?? 0) + (selected.net_dropout_rate ?? 0))}
+                  </span>
+                  （入 {selected.net_dropin ?? 0} / 出 {selected.net_dropout ?? 0}）
+                </Col>
+                <Col span={12}>
+                  错误速率：
+                  <span style={{ color: qualityWarn((selected.net_errin_rate ?? 0) + (selected.net_errout_rate ?? 0)) }}>
+                    {fmtPktRate((selected.net_errin_rate ?? 0) + (selected.net_errout_rate ?? 0))}
+                  </span>
+                  （入 {selected.net_errin ?? 0} / 出 {selected.net_errout ?? 0}）
+                </Col>
+                <Col span={12}>
+                  TCP 重传：
+                  <span style={{ color: qualityWarn(selected.tcp_retrans_rate) }}>
+                    {fmtPktRate(selected.tcp_retrans_rate)}
+                  </span>
+                  （累计 {selected.tcp_retrans ?? 0}）
+                </Col>
                 <Col span={12}>TCP(ESTAB)：{selected.tcp_established}</Col>
                 <Col span={12}>运行时长：{fmtUptime(selected.uptime_seconds)}</Col>
                 <Col span={12}>
@@ -396,6 +467,7 @@ const Machines: React.FC = () => {
                   { label: '内存', value: 'mem' },
                   { label: '磁盘', value: 'disk' },
                   { label: '网络', value: 'net' },
+                  { label: '网络质量', value: 'quality' },
                   { label: 'TCP', value: 'tcp' },
                 ]}
               />
@@ -412,7 +484,11 @@ const Machines: React.FC = () => {
                   colorField="series"
                   height={260}
                   smooth
-                  legend={metricField === 'net' ? { color: { position: 'top' } } : false}
+                  legend={
+                    metricField === 'net' || metricField === 'quality'
+                      ? { color: { position: 'top' } }
+                      : false
+                  }
                   axis={{ y: { labelFormatter: valueFmt } }}
                   tooltip={{ channel: 'y', valueFormatter: valueFmt }}
                   scale={isPercent ? { y: { domainMax: 100, domainMin: 0 } } : {}}

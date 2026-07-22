@@ -25,7 +25,7 @@
 └─────────────────────┘ ◀──────────────────────────────  └──────────────┘
 ```
 
-采集指标：`os` / `kernel` / `arch` / `cpu_count` / `cpu_percent` / `mem_total` / `mem_used` / `mem_percent` / `process_count` / `load1` / `uptime` / `磁盘` / `网络 IO` / `TCP 连接` / `Top 进程` / `外网 IP + 国家`（卡片右上角显示国旗）。
+采集指标：`os` / `kernel` / `arch` / `cpu_count` / `cpu_percent` / `mem_total` / `mem_used` / `mem_percent` / `process_count` / `load1` / `uptime` / `磁盘` / `网络 IO` / `网络质量(错误/丢包/TCP重传)` / `TCP 连接` / `Top 进程` / `外网 IP + 国家`（卡片右上角显示国旗）。
 
 ---
 

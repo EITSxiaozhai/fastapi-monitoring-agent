@@ -54,6 +54,18 @@ class Agent(Base):
     net_bytes_sent: Mapped[int] = mapped_column(BigInteger, default=0)
     net_bytes_recv: Mapped[int] = mapped_column(BigInteger, default=0)
 
+    # 网络质量（错误 / 丢包 / TCP 重传）
+    net_errin: Mapped[int] = mapped_column(BigInteger, default=0)
+    net_errout: Mapped[int] = mapped_column(BigInteger, default=0)
+    net_dropin: Mapped[int] = mapped_column(BigInteger, default=0)
+    net_dropout: Mapped[int] = mapped_column(BigInteger, default=0)
+    net_errin_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    net_errout_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    net_dropin_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    net_dropout_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    tcp_retrans: Mapped[int] = mapped_column(BigInteger, default=0)
+    tcp_retrans_rate: Mapped[float] = mapped_column(Float, default=0.0)
+
     # TCP 连接
     tcp_connections: Mapped[int] = mapped_column(Integer, default=0)
     tcp_established: Mapped[int] = mapped_column(Integer, default=0)
@@ -87,3 +99,8 @@ class Metric(Base):
     net_sent_rate: Mapped[float] = mapped_column(Float, default=0.0)
     net_recv_rate: Mapped[float] = mapped_column(Float, default=0.0)
     tcp_connections: Mapped[int] = mapped_column(Integer, default=0)
+    net_errin_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    net_errout_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    net_dropin_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    net_dropout_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    tcp_retrans_rate: Mapped[float] = mapped_column(Float, default=0.0)
