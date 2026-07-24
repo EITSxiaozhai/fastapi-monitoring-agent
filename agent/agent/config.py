@@ -5,6 +5,7 @@ import socket
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import quote
 
 
 def _resolve_agent_id() -> str:
@@ -45,8 +46,9 @@ class AgentConfig:
         elif server.startswith("https://"):
             server = "wss://" + server[len("https://") :]
         api_key = os.getenv("API_KEY", "changeme-dev-key")
+        # 必须 URL 编码：base64 key 里的 + 在 query 中会被当成空格，导致 403
         return cls(
-            server_url=f"{server}/ws/ingest?api_key={api_key}",
+            server_url=f"{server}/ws/ingest?api_key={quote(api_key, safe='')}",
             api_key=api_key,
             agent_id=_resolve_agent_id(),
             hostname=os.getenv("AGENT_HOSTNAME", socket.gethostname()),
