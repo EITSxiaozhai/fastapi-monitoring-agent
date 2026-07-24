@@ -96,8 +96,14 @@ export async function fetchMetrics(agentId: string, minutes = 60) {
 
 function dashboardWsUrl(): string {
   const token = localStorage.getItem('mon_token') ?? '';
+  // WS_BASE_URL 用于无法反代 WebSocket 的托管平台(如 Vercel)：直连后端。
+  // 形如 wss://status-api.exploit-db.xyz(不带末尾斜杠)。
+  const base = (process.env.WS_BASE_URL ?? '').replace(/\/+$/, '');
+  if (base) {
+    return `${base}/ws/dashboard?token=${encodeURIComponent(token)}`;
+  }
+  // 默认与前端同源：开发环境经 dev proxy(8001)、生产经反向代理转发到后端。
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  // 与前端同源：开发环境经 dev proxy(8001)、生产经反向代理转发到后端
   return `${proto}//${window.location.host}/ws/dashboard?token=${encodeURIComponent(token)}`;
 }
 

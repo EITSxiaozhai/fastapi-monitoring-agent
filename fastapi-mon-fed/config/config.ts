@@ -232,6 +232,8 @@ export default defineConfig({
   define: {
     'process.env.CI': process.env.CI,
     'process.env.COMMIT_HASH': commitHash,
+    // WebSocket 直连后端地址(Vercel 等无法反代 WS 的平台使用)，形如 wss://host
+    'process.env.WS_BASE_URL': process.env.WS_BASE_URL || '',
     __APP_VERSION__: require('./../package.json').version,
     __UMI_VERSION__: require('@umijs/max/package.json').version,
     __UTOO_VERSION__: require('@utoo/pack/package.json').version,
