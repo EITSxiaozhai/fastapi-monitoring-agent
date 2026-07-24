@@ -44,6 +44,9 @@ export default defineConfig({
    */
   hash: true,
 
+  // 避免多 chunk 间 esbuild helper 命名冲突（Vercel / CI 构建会因此失败）
+  esbuildMinifyIIFE: true,
+
   publicPath: PUBLIC_PATH,
 
   /**
