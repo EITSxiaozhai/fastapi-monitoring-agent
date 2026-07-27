@@ -51,46 +51,46 @@ async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-        # 轻量级自动迁移：为已存在的旧表补充新增列（幂等）。
-        migrations = [
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS public_ip VARCHAR(64) DEFAULT ''",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS country_code VARCHAR(8) DEFAULT ''",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS country VARCHAR(64) DEFAULT ''",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS disk_total BIGINT DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS disk_used BIGINT DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS disk_percent DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_sent_rate DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_recv_rate DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_bytes_sent BIGINT DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_bytes_recv BIGINT DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_errin BIGINT DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_errout BIGINT DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_dropin BIGINT DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_dropout BIGINT DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_errin_rate DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_errout_rate DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_dropin_rate DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_dropout_rate DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS tcp_retrans BIGINT DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS tcp_retrans_rate DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS tcp_connections INTEGER DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS tcp_established INTEGER DEFAULT 0",
-            "ALTER TABLE agents ADD COLUMN IF NOT EXISTS top_processes JSON",
-            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS disk_percent DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_sent_rate DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_recv_rate DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS tcp_connections INTEGER DEFAULT 0",
-            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_errin_rate DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_errout_rate DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_dropin_rate DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_dropout_rate DOUBLE PRECISION DEFAULT 0",
-            "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS tcp_retrans_rate DOUBLE PRECISION DEFAULT 0",
-        ]
-        for sql in migrations:
-            try:
-                await conn.execute(text(sql))
-            except Exception:  # noqa: BLE001 - 非 PostgreSQL 或已存在时忽略
-                pass
+        # # 轻量级自动迁移：为已存在的旧表补充新增列（幂等）。
+        # migrations = [
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS public_ip VARCHAR(64) DEFAULT ''",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS country_code VARCHAR(8) DEFAULT ''",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS country VARCHAR(64) DEFAULT ''",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS disk_total BIGINT DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS disk_used BIGINT DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS disk_percent DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_sent_rate DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_recv_rate DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_bytes_sent BIGINT DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_bytes_recv BIGINT DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_errin BIGINT DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_errout BIGINT DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_dropin BIGINT DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_dropout BIGINT DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_errin_rate DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_errout_rate DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_dropin_rate DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS net_dropout_rate DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS tcp_retrans BIGINT DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS tcp_retrans_rate DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS tcp_connections INTEGER DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS tcp_established INTEGER DEFAULT 0",
+        #     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS top_processes JSON",
+        #     "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS disk_percent DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_sent_rate DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_recv_rate DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS tcp_connections INTEGER DEFAULT 0",
+        #     "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_errin_rate DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_errout_rate DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_dropin_rate DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS net_dropout_rate DOUBLE PRECISION DEFAULT 0",
+        #     "ALTER TABLE metrics ADD COLUMN IF NOT EXISTS tcp_retrans_rate DOUBLE PRECISION DEFAULT 0",
+        # ]
+        # for sql in migrations:
+        #     try:
+        #         await conn.execute(text(sql))
+        #     except Exception:  # noqa: BLE001 - 非 PostgreSQL 或已存在时忽略
+        #         pass
 
         # 尝试启用 TimescaleDB 扩展并转换 hypertable。
         try:
