@@ -97,6 +97,7 @@ export async function fetchMetrics(agentId: string, minutes = 60) {
 export interface MachinesDisplayPrefs {
   show_stat_cards: boolean;
   show_machine_cards: boolean;
+  hidden_agent_ids: string[];
 }
 
 export async function queryMachinesDisplayPrefs() {

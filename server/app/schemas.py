@@ -136,6 +136,7 @@ class MetricPoint(BaseModel):
 class MachinesDisplayPrefs(BaseModel):
     show_stat_cards: bool = True
     show_machine_cards: bool = True
+    hidden_agent_ids: list[str] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
@@ -144,3 +145,4 @@ class MachinesDisplayPrefs(BaseModel):
 class MachinesDisplayPrefsIn(BaseModel):
     show_stat_cards: bool = True
     show_machine_cards: bool = True
+    hidden_agent_ids: list[str] = Field(default_factory=list)

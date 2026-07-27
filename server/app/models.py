@@ -114,3 +114,5 @@ class UserMachinesDisplayPrefs(Base):
     user_id: Mapped[str] = mapped_column(String(128), primary_key=True)
     show_stat_cards: Mapped[bool] = mapped_column(Boolean, default=True)
     show_machine_cards: Mapped[bool] = mapped_column(Boolean, default=True)
+    # 用户主动隐藏的主机 agent_id 列表
+    hidden_agent_ids: Mapped[list[str]] = mapped_column(JSON, default=list)
