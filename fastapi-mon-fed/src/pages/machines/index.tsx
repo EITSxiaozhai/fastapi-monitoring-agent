@@ -1,8 +1,10 @@
-import { ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons';
+import { ArrowDownOutlined, ArrowUpOutlined, SettingOutlined } from '@ant-design/icons';
 import { Line } from '@ant-design/plots';
 import { PageContainer, StatisticCard } from '@ant-design/pro-components';
 import {
+  App,
   Badge,
+  Button,
   Card,
   Col,
   Drawer,
@@ -12,6 +14,7 @@ import {
   Segmented,
   Space,
   Spin,
+  Switch,
   Table,
   Tag,
   Tooltip,
@@ -19,6 +22,7 @@ import {
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   type AgentOut,
+  type MachinesDisplayPrefs,
   type MetricPoint,
   type ProcessInfo,
   type Summary,
@@ -26,7 +30,9 @@ import {
   fetchAgents,
   fetchMetrics,
   fetchSummary,
+  queryMachinesDisplayPrefs,
   subscribeDashboard,
+  updateMachinesDisplayPrefs,
 } from '@/services/mon';
 
 function fmtBytes(n: number): string {
@@ -207,6 +213,7 @@ const MachineCard: React.FC<{
 };
 
 const Machines: React.FC = () => {
+  const { message } = App.useApp();
   const [agents, setAgents] = useState<Record<string, AgentOut>>({});
   const [summary, setSummary] = useState<Summary>({
     total: 0,
@@ -220,6 +227,12 @@ const Machines: React.FC = () => {
   const [selected, setSelected] = useState<AgentOut | null>(null);
   const [history, setHistory] = useState<MetricPoint[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [displayPrefs, setDisplayPrefs] = useState<MachinesDisplayPrefs>({
+    show_stat_cards: true,
+    show_machine_cards: true,
+  });
+  const [prefsSaving, setPrefsSaving] = useState(false);
   type MetricField = 'cpu' | 'mem' | 'disk' | 'net' | 'quality' | 'tcp';
 
   const subRef = useRef<{ close: () => void } | null>(null);
@@ -237,6 +250,12 @@ const Machines: React.FC = () => {
         setSummary(sum);
       } catch {
         /* WS 仍会尝试拉取 */
+      }
+      try {
+        const prefs = await queryMachinesDisplayPrefs();
+        if (!cancelled) setDisplayPrefs(prefs);
+      } catch {
+        /* 使用默认显示偏好 */
       }
     })();
 
@@ -265,6 +284,20 @@ const Machines: React.FC = () => {
     };
   }, []);
 
+  const saveDisplayPrefs = async (next: MachinesDisplayPrefs) => {
+    const prev = displayPrefs;
+    setDisplayPrefs(next);
+    setPrefsSaving(true);
+    try {
+      const saved = await updateMachinesDisplayPrefs(next);
+      setDisplayPrefs(saved);
+    } catch {
+      setDisplayPrefs(prev);
+      message.error('保存显示设置失败，请重试');
+    } finally {
+      setPrefsSaving(false);
+    }
+  };
   const agentList = useMemo(
     () => Object.values(agents).sort((a, b) => a.hostname.localeCompare(b.hostname)),
     [agents],
@@ -345,49 +378,102 @@ const Machines: React.FC = () => {
             status={connected ? 'processing' : 'default'}
             text={connected ? '实时连接' : '连接中…'}
           />,
+          <Button
+            key="display-settings"
+            icon={<SettingOutlined />}
+            onClick={() => setSettingsOpen(true)}
+          >
+            显示设置
+          </Button>,
         ],
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          gap: 16,
-          flexWrap: 'wrap',
-          marginBottom: 16,
-        }}
-      >
-        <StatisticCard
-          bordered
-          style={{ flex: '1 1 150px' }}
-          statistic={{ title: '机器总数', value: summary.total }}
-        />
-        <StatisticCard
-          bordered
-          style={{ flex: '1 1 150px' }}
-          statistic={{ title: '在线', value: summary.online, valueStyle: { color: '#52c41a' } }}
-        />
-        <StatisticCard
-          bordered
-          style={{ flex: '1 1 150px' }}
-          statistic={{
-            title: '离线',
-            value: summary.offline,
-            valueStyle: { color: summary.offline ? '#ff4d4f' : undefined },
+      {displayPrefs.show_stat_cards && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 16,
+            flexWrap: 'wrap',
+            marginBottom: 16,
           }}
-        />
-      </div>
-
-      {agentList.length === 0 ? (
-        <Empty description="暂无机器上报，请启动客户端(agent)后稍候" style={{ padding: '60px 0' }} />
-      ) : (
-        <Row gutter={[16, 16]}>
-          {agentList.map((a) => (
-            <Col key={a.agent_id} xs={24} sm={12} md={8} xl={6}>
-              <MachineCard agent={a} onClick={() => openDetail(a)} />
-            </Col>
-          ))}
-        </Row>
+        >
+          <StatisticCard
+            bordered
+            style={{ flex: '1 1 150px' }}
+            statistic={{ title: '机器总数', value: summary.total }}
+          />
+          <StatisticCard
+            bordered
+            style={{ flex: '1 1 150px' }}
+            statistic={{ title: '在线', value: summary.online, valueStyle: { color: '#52c41a' } }}
+          />
+          <StatisticCard
+            bordered
+            style={{ flex: '1 1 150px' }}
+            statistic={{
+              title: '离线',
+              value: summary.offline,
+              valueStyle: { color: summary.offline ? '#ff4d4f' : undefined },
+            }}
+          />
+        </div>
       )}
+
+      {displayPrefs.show_machine_cards &&
+        (agentList.length === 0 ? (
+          <Empty description="暂无机器上报，请启动客户端(agent)后稍候" style={{ padding: '60px 0' }} />
+        ) : (
+          <Row gutter={[16, 16]}>
+            {agentList.map((a) => (
+              <Col key={a.agent_id} xs={24} sm={12} md={8} xl={6}>
+                <MachineCard agent={a} onClick={() => openDetail(a)} />
+              </Col>
+            ))}
+          </Row>
+        ))}
+
+      <Drawer
+        width={360}
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        title="显示设置"
+        destroyOnHidden
+      >
+        <Space orientation="vertical" size="large" style={{ width: '100%' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <span>显示统计卡片（机器总数/在线/离线）</span>
+            <Switch
+              checked={displayPrefs.show_stat_cards}
+              loading={prefsSaving}
+              onChange={(checked) =>
+                saveDisplayPrefs({ ...displayPrefs, show_stat_cards: checked })
+              }
+            />
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <span>显示机器卡片网格</span>
+            <Switch
+              checked={displayPrefs.show_machine_cards}
+              loading={prefsSaving}
+              onChange={(checked) =>
+                saveDisplayPrefs({ ...displayPrefs, show_machine_cards: checked })
+              }
+            />
+          </div>
+        </Space>
+      </Drawer>
 
       <Drawer
         width={720}

@@ -131,3 +131,16 @@ class MetricPoint(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class MachinesDisplayPrefs(BaseModel):
+    show_stat_cards: bool = True
+    show_machine_cards: bool = True
+
+    class Config:
+        from_attributes = True
+
+
+class MachinesDisplayPrefsIn(BaseModel):
+    show_stat_cards: bool = True
+    show_machine_cards: bool = True

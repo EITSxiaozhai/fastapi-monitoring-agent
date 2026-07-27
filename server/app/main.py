@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import auth, dashboard, ws
+from .api import auth, dashboard, machines_display_prefs, ws
 from .config import get_settings
 from .database import dispose_db, init_db
 from .realtime import broadcaster
@@ -44,6 +44,7 @@ app.add_middleware(CORSMiddleware, **_cors_kwargs)
 
 app.include_router(auth.router)
 app.include_router(dashboard.router)
+app.include_router(machines_display_prefs.router)
 app.include_router(ws.router)
 
 

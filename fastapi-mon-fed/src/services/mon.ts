@@ -94,6 +94,24 @@ export async function fetchMetrics(agentId: string, minutes = 60) {
   );
 }
 
+export interface MachinesDisplayPrefs {
+  show_stat_cards: boolean;
+  show_machine_cards: boolean;
+}
+
+export async function queryMachinesDisplayPrefs() {
+  return request<MachinesDisplayPrefs>('/api/v1/machines-display-prefs', {
+    method: 'GET',
+  });
+}
+
+export async function updateMachinesDisplayPrefs(prefs: MachinesDisplayPrefs) {
+  return request<MachinesDisplayPrefs>('/api/v1/machines-display-prefs', {
+    method: 'PUT',
+    data: prefs,
+  });
+}
+
 function dashboardWsUrl(): string {
   const token = localStorage.getItem('mon_token') ?? '';
   // WS_BASE_URL 用于无法反代 WebSocket 的托管平台(如 Vercel)：直连后端。

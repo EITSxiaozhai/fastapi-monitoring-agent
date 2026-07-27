@@ -8,7 +8,7 @@ from datetime import datetime
 
 from typing import Any
 
-from sqlalchemy import JSON, BigInteger, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import JSON, BigInteger, Boolean, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -104,3 +104,13 @@ class Metric(Base):
     net_dropin_rate: Mapped[float] = mapped_column(Float, default=0.0)
     net_dropout_rate: Mapped[float] = mapped_column(Float, default=0.0)
     tcp_retrans_rate: Mapped[float] = mapped_column(Float, default=0.0)
+
+
+class UserMachinesDisplayPrefs(Base):
+    """每用户的机器监控页显示偏好。"""
+
+    __tablename__ = "user_machines_display_prefs"
+
+    user_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    show_stat_cards: Mapped[bool] = mapped_column(Boolean, default=True)
+    show_machine_cards: Mapped[bool] = mapped_column(Boolean, default=True)
