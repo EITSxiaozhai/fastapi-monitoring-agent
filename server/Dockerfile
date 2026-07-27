@@ -25,9 +25,11 @@ ENV PATH="/opt/venv/bin:$PATH" \
 
 COPY --from=build /opt/venv /opt/venv
 COPY --chown=app:app server/app /app/app
+COPY --chown=app:app server/alembic.ini /app/alembic.ini
+COPY --chown=app:app server/alembic /app/alembic
 
 WORKDIR /app
 USER app
 
 EXPOSE 8080
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8080"]
