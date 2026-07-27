@@ -13,11 +13,25 @@ from ..models import Agent, Metric
 from ..realtime import broadcaster
 from ..schemas import MetricIn
 from ..security import decode_token, verify_api_key
-from ..services import to_agent_out
+from ..services import mark_agent_offline, to_agent_out
 
 log = logging.getLogger("mon-server.ws")
 
 router = APIRouter(tags=["websocket"])
+
+
+async def _broadcast_offline(agent_id: str) -> None:
+    """断开后立即把该机标为离线并推送给前端，不必等阈值超时。"""
+    try:
+        async with get_session() as session:
+            agent = await mark_agent_offline(session, agent_id)
+        if agent is None:
+            return
+        await broadcaster.broadcast(
+            {"type": "agent", "data": to_agent_out(agent).model_dump(mode="json")}
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("广播离线状态失败(%s)：%s", agent_id, exc)
 
 
 async def _persist(session: AsyncSession, payload: MetricIn) -> Agent:
@@ -104,6 +118,7 @@ async def ws_ingest(websocket: WebSocket, api_key: str | None = None) -> None:
     peer = websocket.client.host if websocket.client else "?"
     log.info("客户端已连接上报通道：%s", peer)
 
+    last_agent_id: str | None = None
     try:
         async with get_session() as session:
             while True:
@@ -115,6 +130,7 @@ async def ws_ingest(websocket: WebSocket, api_key: str | None = None) -> None:
                     continue
 
                 agent = await _persist(session, payload)
+                last_agent_id = agent.agent_id
                 await websocket.send_json(
                     {"status": "accepted", "agent_id": payload.agent_id}
                 )
@@ -126,6 +142,9 @@ async def ws_ingest(websocket: WebSocket, api_key: str | None = None) -> None:
         log.info("客户端断开上报通道：%s", peer)
     except Exception as exc:  # noqa: BLE001
         log.warning("上报通道异常(%s)：%s", peer, exc)
+    finally:
+        if last_agent_id:
+            await _broadcast_offline(last_agent_id)
 
 
 @router.websocket("/ws/dashboard")

@@ -23,7 +23,9 @@ import {
   type ProcessInfo,
   type Summary,
   type WsMessage,
+  fetchAgents,
   fetchMetrics,
+  fetchSummary,
   subscribeDashboard,
 } from '@/services/mon';
 
@@ -223,10 +225,30 @@ const Machines: React.FC = () => {
   const subRef = useRef<{ close: () => void } | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const [list, sum] = await Promise.all([fetchAgents(), fetchSummary()]);
+        if (cancelled) return;
+        const map: Record<string, AgentOut> = {};
+        for (const a of list) map[a.agent_id] = a;
+        setAgents(map);
+        setSummary(sum);
+      } catch {
+        /* WS 仍会尝试拉取 */
+      }
+    })();
+
     const sub = subscribeDashboard(
       (msg: WsMessage) => {
         if (msg.type === 'snapshot') {
           setSummary(msg.summary);
+          // 空 snapshot 不覆盖已有列表，避免异常空帧把 UI 清空
+          if (msg.agents.length === 0) {
+            setAgents((prev) => (Object.keys(prev).length > 0 ? prev : {}));
+            return;
+          }
           const map: Record<string, AgentOut> = {};
           for (const a of msg.agents) map[a.agent_id] = a;
           setAgents(map);
@@ -237,7 +259,10 @@ const Machines: React.FC = () => {
       (ok) => setConnected(ok),
     );
     subRef.current = sub;
-    return () => sub.close();
+    return () => {
+      cancelled = true;
+      sub.close();
+    };
   }, []);
 
   const agentList = useMemo(

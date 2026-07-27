@@ -24,6 +24,18 @@ def to_agent_out(agent: Agent) -> AgentOut:
     return AgentOut(**data)
 
 
+async def mark_agent_offline(session: AsyncSession, agent_id: str) -> Agent | None:
+    """将指定机器标记为离线（把 last_seen 拨到阈值之外）并写回数据库。"""
+    agent = await session.get(Agent, agent_id)
+    if agent is None:
+        return None
+    threshold = get_settings().offline_threshold_seconds
+    agent.last_seen = datetime.now(timezone.utc) - timedelta(seconds=threshold + 1)
+    await session.commit()
+    await session.refresh(agent)
+    return agent
+
+
 async def build_snapshot(session: AsyncSession) -> dict:
     """构建供前端展示的完整快照：汇总统计 + 机器列表。"""
     result = await session.execute(select(Agent).order_by(Agent.hostname))
