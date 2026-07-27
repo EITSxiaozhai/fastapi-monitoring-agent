@@ -44,7 +44,13 @@ export default [
     routes: [
       {
         path: '/admin',
-        redirect: '/admin/sub-page',
+        redirect: '/admin/hosts',
+      },
+      {
+        path: '/admin/hosts',
+        name: 'hosts',
+        icon: 'cluster',
+        component: './admin/hosts',
       },
       {
         path: '/admin/sub-page',

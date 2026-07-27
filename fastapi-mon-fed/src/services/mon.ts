@@ -94,6 +94,13 @@ export async function fetchMetrics(agentId: string, minutes = 60) {
   );
 }
 
+export async function deleteAgent(agentId: string) {
+  return request<{ status: string }>(
+    `/api/v1/agents/${encodeURIComponent(agentId)}`,
+    { method: 'DELETE' },
+  );
+}
+
 export interface MachinesDisplayPrefs {
   show_stat_cards: boolean;
   show_machine_cards: boolean;

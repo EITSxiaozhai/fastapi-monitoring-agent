@@ -3,11 +3,12 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import session_dependency
 from ..models import Agent, Metric
+from ..realtime import broadcaster
 from ..schemas import AgentOut, MetricPoint
 from ..security import get_current_user
 from ..services import build_snapshot, to_agent_out
@@ -50,3 +51,18 @@ async def get_metrics(
 async def summary(session: AsyncSession = Depends(session_dependency)) -> dict:
     snapshot = await build_snapshot(session)
     return snapshot["summary"]
+
+
+@router.delete("/agents/{agent_id}")
+async def delete_agent(
+    agent_id: str, session: AsyncSession = Depends(session_dependency)
+) -> dict:
+    agent = await session.get(Agent, agent_id)
+    if agent is None:
+        raise HTTPException(status_code=404, detail="机器不存在")
+    await session.execute(delete(Metric).where(Metric.agent_id == agent_id))
+    await session.delete(agent)
+    await session.commit()
+    snapshot = await build_snapshot(session)
+    await broadcaster.broadcast(snapshot)
+    return {"status": "ok"}

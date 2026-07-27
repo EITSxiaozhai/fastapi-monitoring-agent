@@ -7,7 +7,6 @@ import {
   Button,
   Card,
   Col,
-  Divider,
   Drawer,
   Empty,
   Progress,
@@ -19,7 +18,6 @@ import {
   Table,
   Tag,
   Tooltip,
-  Typography,
 } from 'antd';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -316,14 +314,6 @@ const Machines: React.FC = () => {
     [agentList, hiddenSet],
   );
 
-  const toggleAgentHidden = (agentId: string, visible: boolean) => {
-    const current = displayPrefs.hidden_agent_ids ?? [];
-    const nextHidden = visible
-      ? current.filter((id) => id !== agentId)
-      : [...new Set([...current, agentId])];
-    void saveDisplayPrefs({ ...displayPrefs, hidden_agent_ids: nextHidden });
-  };
-
   const openDetail = async (agent: AgentOut) => {
     setSelected(agent);
     setHistoryLoading(true);
@@ -444,7 +434,7 @@ const Machines: React.FC = () => {
         (agentList.length === 0 ? (
           <Empty description="暂无机器上报，请启动客户端(agent)后稍候" style={{ padding: '60px 0' }} />
         ) : visibleAgentList.length === 0 ? (
-          <Empty description="所有机器卡片已隐藏，可在「显示设置」中重新开启" style={{ padding: '60px 0' }} />
+          <Empty description="所有机器卡片已隐藏，可在「管理页 → 主机管理」中重新开启" style={{ padding: '60px 0' }} />
         ) : (
           <Row gutter={[16, 16]}>
             {visibleAgentList.map((a) => (
@@ -494,54 +484,6 @@ const Machines: React.FC = () => {
                 saveDisplayPrefs({ ...displayPrefs, show_machine_cards: checked })
               }
             />
-          </div>
-
-          <Divider style={{ margin: 0 }} />
-
-          <div>
-            <Typography.Text strong>按主机显示卡片</Typography.Text>
-            <Typography.Paragraph type="secondary" style={{ marginTop: 4, marginBottom: 12 }}>
-              关闭后该主机卡片不会出现在网格中（统计仍计入）
-            </Typography.Paragraph>
-            {agentList.length === 0 ? (
-              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无主机" />
-            ) : (
-              <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
-                {agentList.map((a) => (
-                  <div
-                    key={a.agent_id}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: 12,
-                    }}
-                  >
-                    <div style={{ minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontWeight: 500,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {a.hostname}
-                      </div>
-                      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                        {a.online ? '在线' : '离线'}
-                        {a.public_ip ? ` · ${a.public_ip}` : ''}
-                      </Typography.Text>
-                    </div>
-                    <Switch
-                      checked={!hiddenSet.has(a.agent_id)}
-                      loading={prefsSaving}
-                      onChange={(checked) => toggleAgentHidden(a.agent_id, checked)}
-                    />
-                  </div>
-                ))}
-              </Space>
-            )}
           </div>
         </Space>
       </Drawer>
