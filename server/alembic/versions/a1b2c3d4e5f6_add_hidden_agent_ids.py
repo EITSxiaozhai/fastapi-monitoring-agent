@@ -8,8 +8,6 @@ Create Date: 2026-07-27 16:55:00.000000
 from typing import Sequence, Union
 
 from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = 'a1b2c3d4e5f6'
@@ -19,14 +17,11 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        'user_machines_display_prefs',
-        sa.Column(
-            'hidden_agent_ids',
-            postgresql.JSON(astext_type=sa.Text()),
-            nullable=False,
-            server_default=sa.text("'[]'::json"),
-        ),
+    op.execute(
+        """
+        ALTER TABLE user_machines_display_prefs
+        ADD COLUMN IF NOT EXISTS hidden_agent_ids JSON NOT NULL DEFAULT '[]'::json
+        """
     )
 
 
